@@ -1,20 +1,9 @@
-interface Price {
-  product: string;
-  price: string;
-  unit: string;
-  change: string;
-  trend: 'up' | 'down';
-  low: string;
-  high: string;
-  market: string;
-  category: string;
-}
 
-const regions = ['Tümü', 'Konya', 'Adana', 'Polatlı', 'Ulusal Süt Konseyi'];
 
-const prices: Price[] = [
-  // Makarnalık Buğday Grupları
-  {
+
+
+ [
+ {
     product: '3. Grup Makarnalık Buğday',
     price: '17,21 TL',
     unit: 'TL / KG',
