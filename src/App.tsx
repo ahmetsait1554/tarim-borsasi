@@ -47,7 +47,7 @@ function App() {
 
     const arrayMatch = data.match(/const prices(?:: Price\[\])?\s*=\s*\[([\s\S]*?)\];/);
     if (!arrayMatch) {
-      throw new Error('Dosyada fiyat listesi bulunamadı');
+      throw new Error('Kaynak dosyada fiyat listesi bulunamadı');
     }
 
     const items = [...arrayMatch[1].matchAll(/\{([\s\S]*?)\}/g)].map((match) => {
@@ -79,17 +79,20 @@ function App() {
     });
 
     if (items.length === 0) {
-      throw new Error('Dosyada fiyat bulunamadı');
+      throw new Error('Kaynak dosyada fiyat bulunamadı');
     }
     return items;
   };
 
-  const fetchPrices = async () => {
-    setLoadState('loading');
+  const GITHUB_URL =
+    'https://raw.githubusercontent.com/ahmetsait1554/tarim-borsasi/refs/heads/main/public/prices.json';
+
+  const fetchPrices = async (silent = false) => {
+    if (!silent) setLoadState('loading');
     try {
-      const res = await fetch('/prices.json');
+      const res = await fetch(GITHUB_URL, { cache: 'no-store' });
       if (!res.ok) {
-        throw new Error(`Dosya yükleme hatası: ${res.status}`);
+        throw new Error(`Sunucu hatası: ${res.status}`);
       }
       const responseText = await res.text();
       let data: unknown = responseText;
@@ -104,16 +107,13 @@ function App() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
       setErrorMsg(message);
-      setLoadState('error');
+      if (!silent) setLoadState('error');
     }
   };
 
   useEffect(() => {
     void fetchPrices();
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setCurrentTime(new Date()), 60000);
+    const timer = window.setInterval(() => void fetchPrices(true), 60000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -147,13 +147,24 @@ function App() {
               </h1>
             </div>
           </div>
-          <div className="hidden shrink-0 items-center gap-2 rounded-full border border-[#dce2df] bg-white px-3 py-2 text-xs font-semibold text-[#53625d] shadow-sm sm:flex">
-            <Clock3 size={14} className="text-[#176b45]" />
-            Son Güncelleme: Bugün {formattedTime}
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#e7f4ed] px-2.5 py-2 text-[11px] font-bold text-[#176b45] sm:hidden">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#21a665]" />
-            CANLI
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden items-center gap-2 rounded-full border border-[#dce2df] bg-white px-3 py-2 text-xs font-semibold text-[#53625d] shadow-sm sm:flex">
+              <Clock3 size={14} className="text-[#176b45]" />
+              Son Güncelleme: {formattedTime}
+            </div>
+            <button
+              type="button"
+              onClick={() => void fetchPrices()}
+              disabled={loadState === 'loading'}
+              aria-label="Fiyatları yenile"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#dce2df] bg-white text-[#176b45] shadow-sm transition-all hover:bg-[#e7f4ed] disabled:opacity-50 sm:h-10 sm:w-10"
+            >
+              <RefreshCw size={16} className={loadState === 'loading' ? 'animate-spin' : ''} />
+            </button>
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#e7f4ed] px-2.5 py-2 text-[11px] font-bold text-[#176b45] sm:hidden">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#21a665]" />
+              CANLI
+            </div>
           </div>
         </div>
       </header>
@@ -302,7 +313,10 @@ function App() {
 
         <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-[#d8dddb] pt-5 text-[11px] font-semibold text-[#8a9591] sm:flex-row">
           <span>Fiyatlar piyasa ortalamalarını gösterir.</span>
-          <span>Veriler gün içinde güncellenir.</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#21a665]" />
+            Her dakika otomatik güncellenir
+          </span>
         </footer>
       </main>
     </div>
