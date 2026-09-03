@@ -36,9 +36,6 @@ function App() {
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const GITHUB_URL =
-    'https://raw.githubusercontent.com/ahmetsait1554/tarim-borsasi/refs/heads/main/public/prices.json';
-
   const parsePrices = (data: unknown): Price[] => {
     if (Array.isArray(data)) {
       return data as Price[];
@@ -50,7 +47,7 @@ function App() {
 
     const arrayMatch = data.match(/const prices(?:: Price\[\])?\s*=\s*\[([\s\S]*?)\];/);
     if (!arrayMatch) {
-      throw new Error('GitHub dosyasında fiyat listesi bulunamadı');
+      throw new Error('Dosyada fiyat listesi bulunamadı');
     }
 
     const items = [...arrayMatch[1].matchAll(/\{([\s\S]*?)\}/g)].map((match) => {
@@ -63,7 +60,7 @@ function App() {
         return valueMatch[1];
       };
 
-      const trend = readValue('trend');
+      const trend = readValue('trend') as Trend;
       if (trend !== 'up' && trend !== 'down') {
         throw new Error('Geçersiz fiyat değişim yönü');
       }
@@ -82,7 +79,7 @@ function App() {
     });
 
     if (items.length === 0) {
-      throw new Error('GitHub dosyasında fiyat bulunamadı');
+      throw new Error('Dosyada fiyat bulunamadı');
     }
     return items;
   };
@@ -90,9 +87,9 @@ function App() {
   const fetchPrices = async () => {
     setLoadState('loading');
     try {
-      const res = await fetch(GITHUB_URL);
+      const res = await fetch('/prices.json');
       if (!res.ok) {
-        throw new Error(`GitHub sunucu hatası: ${res.status}`);
+        throw new Error(`Dosya yükleme hatası: ${res.status}`);
       }
       const responseText = await res.text();
       let data: unknown = responseText;
